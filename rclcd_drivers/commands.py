@@ -15,7 +15,11 @@ def init_hw(pins: [Pin]) -> None:
     if(__RASPI_HW):
         r.GPIO.setwarnings(False)
         r.GPIO.setmode(__GPIO_MODE)
-        r.define_out_pins(list(map(lambda x: x.value, pins)))
+        pins = list(map(lambda x: x.value, pins))
+        r.define_in_pins(pins)
+        r.define_out_pins(pins)
+    else:
+        raise ValueError('Non-raspi hardware')
 
 
 def __set_pin(pin: Pin, mode: bool) -> None:
@@ -25,9 +29,14 @@ def __set_pin(pin: Pin, mode: bool) -> None:
         r.pins_low(pin.value)
 
 
+def __get_pin(pin: Pin) -> bool:
+    return r.pins_high(pin.value)
+
+
 def clear_display():
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, False)
@@ -41,6 +50,7 @@ def clear_display():
 def return_home():
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, False)
@@ -54,6 +64,7 @@ def return_home():
 def entry_mode_set(direction: bool, shift: bool):
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, False)
@@ -67,6 +78,7 @@ def entry_mode_set(direction: bool, shift: bool):
 def display_mode(all_on: bool, cursor_on: bool, cursor_pos_on: bool):
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, False)
@@ -80,6 +92,7 @@ def display_mode(all_on: bool, cursor_on: bool, cursor_pos_on: bool):
 def cursor_or_display_shift(vertical: bool, horizontal: bool):
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, False)
@@ -93,6 +106,7 @@ def cursor_or_display_shift(vertical: bool, horizontal: bool):
 def function_set(dl: bool, nl: bool, font_size: bool):
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, False)
     __set_pin(Pin.DB5, True)
@@ -110,6 +124,7 @@ def set_cgram_addr(addr: int):
 
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, False)
     __set_pin(Pin.DB6, True)
     __set_pin(Pin.DB5, bits[0])
@@ -127,6 +142,7 @@ def set_ddram_addr(addr: int):
 
     __set_pin(Pin.REGISTER_SELECT, False)
     __set_pin(Pin.DATA_RW, False)
+
     __set_pin(Pin.DB7, True)
     __set_pin(Pin.DB6, bits[0])
     __set_pin(Pin.DB5, bits[1])
@@ -135,3 +151,37 @@ def set_ddram_addr(addr: int):
     __set_pin(Pin.DB2, bits[4])
     __set_pin(Pin.DB1, bits[5])
     __set_pin(Pin.DB0, bits[6])
+
+
+def read_busy_flag(addr: int) -> dict:
+    __set_pin(Pin.REGISTER_SELECT, False)
+    __set_pin(Pin.DATA_RW, True)
+
+    data_pins = [Pin.DB6, Pin.DB5, Pin.DB4, Pin.DB3, Pin.DB2, Pin.DB1, Pin.DB0]
+    return {'busy': __get_pin(Pin.DB7),
+            'address': list(map(lambda x: __get_pin(x), data_pins))}
+
+
+def write_to_ram(bits: [int]):
+    if(len(bits) > 8):
+        raise ValueError('Can only write 8 bits to RAM')
+    __set_pin(Pin.REGISTER_SELECT, True)
+    __set_pin(Pin.DATA_RW, False)
+
+    __set_pin(Pin.DB7, bits[0])
+    __set_pin(Pin.DB6, bits[1])
+    __set_pin(Pin.DB5, bits[2])
+    __set_pin(Pin.DB4, bits[3])
+    __set_pin(Pin.DB3, bits[4])
+    __set_pin(Pin.DB2, bits[5])
+    __set_pin(Pin.DB1, bits[6])
+    __set_pin(Pin.DB0, bits[7])
+
+
+def read_from_ram() -> [bool]:
+    __set_pin(Pin.REGISTER_SELECT, True)
+    __set_pin(Pin.DATA_RW, True)
+
+    data_pins = [Pin.DB7, Pin.DB6, Pin.DB5, Pin.DB4,
+                 Pin.DB3, Pin.DB2, Pin.DB1, Pin.DB0]
+    return list(map(lambda x: __get_pin(x), data_pins))

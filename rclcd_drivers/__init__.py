@@ -1,5 +1,5 @@
-MAJOR = 0
-MINOR = 1
+MAJOR = 1
+MINOR = 0
 PATCH = 0
 
 LIB_NAME = 'rc-lcd-drivers'
